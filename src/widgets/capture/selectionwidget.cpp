@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2017-2019 Alejandro Sirgo Rica & Contributors
-
+#include <iostream>
 #include "selectionwidget.h"
 #include "capturetool.h"
 #include "capturetoolbutton.h"
@@ -211,8 +211,9 @@ void SelectionWidget::parentMouseMoveEvent(QMouseEvent* e)
 
     QPoint pos = e->pos();
     auto geom = geometry();
-    bool symmetryMod = qApp->keyboardModifiers() & Qt::ShiftModifier;
-
+    bool asymmetryMod = qApp->keyboardModifiers() & Qt::ShiftModifier;
+    bool symmetryMod = qApp->keyboardModifiers() & Qt::ControlModifier;
+    bool upArrow = qApp->
     QPoint newTopLeft = geom.topLeft(), newBottomRight = geom.bottomRight();
     int &newLeft = newTopLeft.rx(), &newRight = newBottomRight.rx(),
         &newTop = newTopLeft.ry(), &newBottom = newBottomRight.ry();
@@ -262,13 +263,33 @@ void SelectionWidget::parentMouseMoveEvent(QMouseEvent* e)
     }
     // finalize geometry change
     if (m_activeSide) {
-        if (symmetryMod) {
+        if(asymmetryMod && symmetryMod){
+            QPoint deltaTopLeft = newTopLeft - geom.topLeft();
+            QPoint deltaBottomRight = newBottomRight - geom.bottomRight();
+            newTopLeft = geom.topLeft() + deltaTopLeft - deltaBottomRight;
+            newBottomRight = geom.bottomRight() + deltaBottomRight - deltaTopLeft;
+            
+            /*std::cout << "Geom Top Left X: " << geom.topLeft().x() << std::endl;
+            std::cout << "Geom Top Left Y: " << geom.topLeft().y() << std::endl;
+            std::cout << "Geom Bottom Right X: " << geom.bottomRight().x() << std::endl;
+            std::cout << "Geom Bottom Right Y: " << geom.bottomRight().y() << std::endl;
+            std::cout << "deltaTopLeft X: " << deltaTopLeft.x() << std::endl;
+            std::cout << "deltaTopLeft Y: " << deltaTopLeft.y() << std::endl;
+            std::cout << "deltaBottomRight X: " << deltaBottomRight.x() << std::endl;
+            std::cout << "deltaBottomRight Y: " << deltaBottomRight.y() << std::endl;
+            std::cout << "newTopLeft X: " << newTopLeft.x() << std::endl;
+            std::cout << "newTopLeft y: " << newTopLeft.y() << std::endl;
+            std::cout << "newBottomRight X: " << newBottomRight.x() << std::endl;
+            std::cout << "newBottomRight y: " << newBottomRight.y() << std::endl;*/
+            
+        }
+        else if (asymmetryMod) { //only shift key -> x and y are symmmetric
             QPoint deltaTopLeft = newTopLeft - geom.topLeft();
             QPoint deltaBottomRight = newBottomRight - geom.bottomRight();
             newTopLeft = geom.topLeft() + deltaTopLeft - deltaBottomRight;
             newBottomRight =
               geom.bottomRight() + deltaBottomRight - deltaTopLeft;
-        }
+        } 
         geom = { newTopLeft, newBottomRight };
         setGeometry(geom.normalized());
         m_activeSide = getProperSide(m_activeSide, geom);
